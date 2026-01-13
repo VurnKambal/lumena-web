@@ -10,6 +10,8 @@ interface FinanceContextType {
   updateBucket: (bucket: Bucket) => void;
   setBuckets: (buckets: Bucket[]) => void;
   addTransaction: (transaction: Transaction) => void;
+  addIncome: (amount: number, source: string, date: string, allocations: Record<string, number>) => void;
+  logExpense: (amount: number, description: string, date: string, bucketId: string) => void;
   setIncomeType: (type: IncomeType) => void;
   setSafetyMargin: (amount: number) => void;
   completeOnboarding: () => void;
@@ -57,6 +59,57 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       ...prev,
       transactions: [...prev.transactions, transaction],
     }));
+  };
+
+  const addIncome = (amount: number, source: string, date: string, allocations: Record<string, number>) => {
+    setState((prev) => {
+      const newTransaction: Transaction = {
+        id: Date.now().toString(),
+        amount,
+        date,
+        description: source,
+        type: 'income',
+      };
+
+      const updatedBuckets = prev.buckets.map((bucket) => {
+        if (allocations[bucket.id]) {
+          return { ...bucket, amount: bucket.amount + allocations[bucket.id] };
+        }
+        return bucket;
+      });
+
+      return {
+        ...prev,
+        buckets: updatedBuckets,
+        transactions: [...prev.transactions, newTransaction],
+      };
+    });
+  };
+
+  const logExpense = (amount: number, description: string, date: string, bucketId: string) => {
+    setState((prev) => {
+      const newTransaction: Transaction = {
+        id: Date.now().toString(),
+        amount,
+        date,
+        description,
+        bucketId,
+        type: 'expense',
+      };
+
+      const updatedBuckets = prev.buckets.map((bucket) => {
+        if (bucket.id === bucketId) {
+          return { ...bucket, amount: bucket.amount - amount };
+        }
+        return bucket;
+      });
+
+      return {
+        ...prev,
+        buckets: updatedBuckets,
+        transactions: [...prev.transactions, newTransaction],
+      };
+    });
   };
 
   const setIncomeType = (type: IncomeType) => {
@@ -127,6 +180,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         updateBucket,
         setBuckets,
         addTransaction,
+        addIncome,
+        logExpense,
         setIncomeType,
         setSafetyMargin,
         completeOnboarding,
