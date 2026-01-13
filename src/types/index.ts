@@ -1,4 +1,5 @@
 export type BucketCategory = 'Tax' | 'Essentials' | 'Savings' | 'Play';
+export type IncomeType = 'Steady' | 'Irregular' | 'Mixed';
 
 export interface Bucket {
   id: string;
@@ -21,4 +22,7 @@ export interface FinanceState {
   buckets: Bucket[];
   transactions: Transaction[];
   unallocatedIncome: number;
+  incomeType?: IncomeType;
+  safetyMargin: number;
+  isOnboardingComplete: boolean;
 }
