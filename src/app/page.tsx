@@ -88,6 +88,8 @@ export default function Home() {
                  state.buckets.map((bucket) => {
                      // Percentage of total cash
                      const percentOfTotal = totalCash > 0 ? (bucket.amount / totalCash) * 100 : 0;
+                     const isOverdraft = bucket.amount < 0;
+
                      return (
                         <Card key={bucket.id} className="p-4 space-y-3">
                            <div className="flex justify-between items-center">
@@ -105,13 +107,15 @@ export default function Home() {
                                     <p className="text-xs text-slate-400">{bucket.percentage}% Allocation</p>
                                  </div>
                               </div>
-                              <p className="text-xl font-bold text-slate-700 tabular-nums">
+                              <p className={`text-xl font-bold tabular-nums ${isOverdraft ? 'text-rose-600' : 'text-slate-700'}`}>
                                  ${bucket.amount.toFixed(2)}
                               </p>
                            </div>
                            <div className="space-y-1">
                               <ProgressBar value={percentOfTotal} max={100} className="h-1.5" colorClass="bg-slate-800" />
-                              <p className="text-xs text-slate-400 text-right">{percentOfTotal.toFixed(0)}% of Total</p>
+                              <p className={`text-xs text-right ${isOverdraft ? 'text-rose-500 font-medium' : 'text-slate-400'}`}>
+                                 {isOverdraft ? '⚠️ Overdrawn' : `${percentOfTotal.toFixed(0)}% of Total`}
+                              </p>
                            </div>
                         </Card>
                      );

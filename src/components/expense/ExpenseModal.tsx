@@ -93,11 +93,19 @@ export function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
           </div>
 
           {selectedBucket && (
-              <div className="p-3 bg-slate-50 rounded-lg text-sm text-slate-600 flex justify-between">
-                 <span>Available in {selectedBucket.name}:</span>
-                 <span className={`font-bold tabular-nums ${selectedBucket.amount < parseFloat(amount || '0') ? 'text-red-500' : 'text-slate-800'}`}>
-                    ${selectedBucket.amount.toFixed(2)}
-                 </span>
+              <div className="space-y-2">
+                 <div className="p-3 bg-slate-50 rounded-lg text-sm text-slate-600 flex justify-between">
+                    <span>Available in {selectedBucket.name}:</span>
+                    <span className={`font-bold tabular-nums ${selectedBucket.amount < parseFloat(amount || '0') ? 'text-rose-600' : 'text-slate-800'}`}>
+                       ${selectedBucket.amount.toFixed(2)}
+                    </span>
+                 </div>
+                 {parseFloat(amount || '0') > selectedBucket.amount && (
+                    <div className="p-3 bg-rose-50 border border-rose-100 rounded-lg flex items-start gap-2 text-sm text-rose-700 animate-in fade-in slide-in-from-top-1">
+                       <span>⚠️</span>
+                       <p>This will put your <strong>{selectedBucket.name}</strong> bucket into negative balance.</p>
+                    </div>
+                 )}
               </div>
           )}
 

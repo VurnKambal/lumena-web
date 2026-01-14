@@ -1,0 +1,24 @@
+
+> lumena-web@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.1 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+
+✓ Starting...
+✓ Ready in 3.3s
+○ Compiling / ...
+ GET / 200 in 9.0s (compile: 8.3s, render: 623ms)
+ GET / 200 in 65ms (compile: 6ms, render: 58ms)
+ GET /onboarding 200 in 81ms (compile: 6ms, render: 76ms)
+ GET / 200 in 68ms (compile: 6ms, render: 63ms)
+ GET /onboarding 200 in 29ms (compile: 7ms, render: 22ms)
+ GET / 200 in 118ms (compile: 3ms, render: 114ms)
+ GET /onboarding 200 in 26ms (compile: 4ms, render: 23ms)
+ GET / 200 in 63ms (compile: 5ms, render: 58ms)
+ GET / 200 in 48ms (compile: 4ms, render: 45ms)
+ GET / 200 in 59ms (compile: 4ms, render: 55ms)
+ GET / 200 in 43ms (compile: 3ms, render: 40ms)
+ GET / 200 in 63ms (compile: 3ms, render: 60ms)
+ GET / 200 in 55ms (compile: 3ms, render: 52ms)
