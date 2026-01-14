@@ -7,6 +7,8 @@ export interface Bucket {
   category: BucketCategory;
   amount: number;
   percentage: number; // For income allocation
+  target?: number;
+  color?: string;
 }
 
 export interface Transaction {

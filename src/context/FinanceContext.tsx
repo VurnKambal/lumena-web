@@ -8,6 +8,7 @@ interface FinanceContextType {
   state: FinanceState;
   addBucket: (bucket: Bucket) => void;
   updateBucket: (bucket: Bucket) => void;
+  deleteBucket: (id: string) => void;
   setBuckets: (buckets: Bucket[]) => void;
   addTransaction: (transaction: Transaction) => void;
   addIncome: (amount: number, source: string, date: string, allocations: Record<string, number>) => void;
@@ -44,6 +45,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({
       ...prev,
       buckets: prev.buckets.map((b) => (b.id === updatedBucket.id ? updatedBucket : b)),
+    }));
+  };
+
+  const deleteBucket = (id: string) => {
+    setState((prev) => ({
+      ...prev,
+      buckets: prev.buckets.filter((b) => b.id !== id),
     }));
   };
 
@@ -178,6 +186,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         state,
         addBucket,
         updateBucket,
+        deleteBucket,
         setBuckets,
         addTransaction,
         addIncome,
