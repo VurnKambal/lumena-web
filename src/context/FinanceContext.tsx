@@ -13,8 +13,9 @@ interface FinanceContextType {
   addTransaction: (transaction: Transaction) => void;
   deleteTransaction: (id: string) => void;
   addIncome: (amount: number, source: string, date: string, allocations: Record<string, number>) => void;
-  logExpense: (amount: number, description: string, date: string, bucketId: string, transfer?: { fromBucketId: string, amount: number }) => void;
+  logExpense: (amount: number, description: string, date: string, bucketId: string, transfers?: { fromBucketId: string, amount: number }[]) => void;
   transferFunds: (fromBucketId: string, toBucketId: string, amount: number) => void;
+  batchTransfer: (transfers: { fromBucketId: string, toBucketId: string, amount: number }[]) => void;
   setIncomeType: (type: IncomeType) => void;
   setSafetyMargin: (amount: number) => void;
   completeOnboarding: () => void;
@@ -166,39 +167,81 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const logExpense = (amount: number, description: string, date: string, bucketId: string, transfer?: { fromBucketId: string, amount: number }) => {
+  const batchTransfer = (transfers: { fromBucketId: string, toBucketId: string, amount: number }[]) => {
     setState((prev) => {
       const newTransactions = [...prev.transactions];
       let updatedBuckets = [...prev.buckets];
 
-      // Handle Transfer First if exists
-      if (transfer) {
-          const fromBucket = updatedBuckets.find(b => b.id === transfer.fromBucketId);
-          const toBucket = updatedBuckets.find(b => b.id === bucketId); // Transfer destination is the expense bucket
+      transfers.forEach((t, index) => {
+          const fromBucket = updatedBuckets.find(b => b.id === t.fromBucketId);
+          const toBucket = updatedBuckets.find(b => b.id === t.toBucketId);
 
           if (fromBucket && toBucket) {
-             // Create Transfer Transaction
              newTransactions.push({
-                id: (Date.now() - 1).toString(), // Ensure unique ID (slight offset)
-                amount: transfer.amount,
-                date, // Use same date as expense
+                id: (Date.now() + index).toString(),
+                amount: t.amount,
+                date: new Date().toISOString().split('T')[0],
                 description: `Cover from ${fromBucket.name}`,
-                fromBucketId: transfer.fromBucketId,
-                toBucketId: bucketId,
+                fromBucketId: t.fromBucketId,
+                toBucketId: t.toBucketId,
                 type: 'transfer'
              });
 
-             // Update Buckets for Transfer
              updatedBuckets = updatedBuckets.map(bucket => {
-                 if (bucket.id === transfer.fromBucketId) {
-                     return { ...bucket, amount: bucket.amount - transfer.amount };
+                 if (bucket.id === t.fromBucketId) {
+                     return { ...bucket, amount: bucket.amount - t.amount };
                  }
-                 if (bucket.id === bucketId) {
-                     return { ...bucket, amount: bucket.amount + transfer.amount };
+                 if (bucket.id === t.toBucketId) {
+                     return { ...bucket, amount: bucket.amount + t.amount };
                  }
                  return bucket;
              });
           }
+      });
+
+      return {
+        ...prev,
+        buckets: updatedBuckets,
+        transactions: newTransactions,
+      };
+    });
+  };
+
+  const logExpense = (amount: number, description: string, date: string, bucketId: string, transfers?: { fromBucketId: string, amount: number }[]) => {
+    setState((prev) => {
+      const newTransactions = [...prev.transactions];
+      let updatedBuckets = [...prev.buckets];
+
+      // Handle Transfers First if exists
+      if (transfers && transfers.length > 0) {
+          transfers.forEach((transfer, index) => {
+              const fromBucket = updatedBuckets.find(b => b.id === transfer.fromBucketId);
+              // Transfer destination is the expense bucket
+
+              if (fromBucket) {
+                 // Create Transfer Transaction
+                 newTransactions.push({
+                    id: (Date.now() - 100 + index).toString(), // Ensure unique ID (slight offset)
+                    amount: transfer.amount,
+                    date, // Use same date as expense
+                    description: `Cover from ${fromBucket.name}`,
+                    fromBucketId: transfer.fromBucketId,
+                    toBucketId: bucketId,
+                    type: 'transfer'
+                 });
+
+                 // Update Buckets for Transfer
+                 updatedBuckets = updatedBuckets.map(bucket => {
+                     if (bucket.id === transfer.fromBucketId) {
+                         return { ...bucket, amount: bucket.amount - transfer.amount };
+                     }
+                     if (bucket.id === bucketId) {
+                         return { ...bucket, amount: bucket.amount + transfer.amount };
+                     }
+                     return bucket;
+                 });
+              }
+          });
       }
 
       // Handle Expense
@@ -300,6 +343,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         addIncome,
         logExpense,
         transferFunds,
+        batchTransfer,
         setIncomeType,
         setSafetyMargin,
         completeOnboarding,
