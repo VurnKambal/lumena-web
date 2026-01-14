@@ -17,8 +17,10 @@ export interface Transaction {
   date: string;
   description: string;
   bucketId?: string; // Optional if not yet allocated or general income
+  fromBucketId?: string; // For transfers
+  toBucketId?: string; // For transfers
   allocations?: Record<string, number>; // For income splits
-  type: 'income' | 'expense';
+  type: 'income' | 'expense' | 'transfer';
 }
 
 export interface FinanceState {

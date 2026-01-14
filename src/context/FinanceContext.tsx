@@ -13,7 +13,8 @@ interface FinanceContextType {
   addTransaction: (transaction: Transaction) => void;
   deleteTransaction: (id: string) => void;
   addIncome: (amount: number, source: string, date: string, allocations: Record<string, number>) => void;
-  logExpense: (amount: number, description: string, date: string, bucketId: string) => void;
+  logExpense: (amount: number, description: string, date: string, bucketId: string, transfer?: { fromBucketId: string, amount: number }) => void;
+  transferFunds: (fromBucketId: string, toBucketId: string, amount: number) => void;
   setIncomeType: (type: IncomeType) => void;
   setSafetyMargin: (amount: number) => void;
   completeOnboarding: () => void;
@@ -84,6 +85,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         } else if (transaction.type === 'expense' && transaction.bucketId === bucket.id) {
            // Add back amount
            return { ...bucket, amount: bucket.amount + transaction.amount };
+        } else if (transaction.type === 'transfer' && transaction.fromBucketId && transaction.toBucketId) {
+           // Reverse transfer
+           if (bucket.id === transaction.fromBucketId) {
+             return { ...bucket, amount: bucket.amount + transaction.amount };
+           }
+           if (bucket.id === transaction.toBucketId) {
+             return { ...bucket, amount: bucket.amount - transaction.amount };
+           }
         }
         return bucket;
       });
@@ -92,6 +101,41 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         ...prev,
         buckets: updatedBuckets,
         transactions: prev.transactions.filter((t) => t.id !== id),
+      };
+    });
+  };
+
+  const transferFunds = (fromBucketId: string, toBucketId: string, amount: number) => {
+    setState((prev) => {
+      const fromBucket = prev.buckets.find(b => b.id === fromBucketId);
+      const toBucket = prev.buckets.find(b => b.id === toBucketId);
+
+      if (!fromBucket || !toBucket) return prev;
+
+      const newTransaction: Transaction = {
+        id: Date.now().toString(),
+        amount,
+        date: new Date().toISOString().split('T')[0],
+        description: `Cover from ${fromBucket.name}`,
+        fromBucketId,
+        toBucketId,
+        type: 'transfer',
+      };
+
+      const updatedBuckets = prev.buckets.map((bucket) => {
+        if (bucket.id === fromBucketId) {
+          return { ...bucket, amount: bucket.amount - amount };
+        }
+        if (bucket.id === toBucketId) {
+          return { ...bucket, amount: bucket.amount + amount };
+        }
+        return bucket;
+      });
+
+      return {
+        ...prev,
+        buckets: updatedBuckets,
+        transactions: [...prev.transactions, newTransaction],
       };
     });
   };
@@ -122,9 +166,43 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const logExpense = (amount: number, description: string, date: string, bucketId: string) => {
+  const logExpense = (amount: number, description: string, date: string, bucketId: string, transfer?: { fromBucketId: string, amount: number }) => {
     setState((prev) => {
-      const newTransaction: Transaction = {
+      const newTransactions = [...prev.transactions];
+      let updatedBuckets = [...prev.buckets];
+
+      // Handle Transfer First if exists
+      if (transfer) {
+          const fromBucket = updatedBuckets.find(b => b.id === transfer.fromBucketId);
+          const toBucket = updatedBuckets.find(b => b.id === bucketId); // Transfer destination is the expense bucket
+
+          if (fromBucket && toBucket) {
+             // Create Transfer Transaction
+             newTransactions.push({
+                id: (Date.now() - 1).toString(), // Ensure unique ID (slight offset)
+                amount: transfer.amount,
+                date, // Use same date as expense
+                description: `Cover from ${fromBucket.name}`,
+                fromBucketId: transfer.fromBucketId,
+                toBucketId: bucketId,
+                type: 'transfer'
+             });
+
+             // Update Buckets for Transfer
+             updatedBuckets = updatedBuckets.map(bucket => {
+                 if (bucket.id === transfer.fromBucketId) {
+                     return { ...bucket, amount: bucket.amount - transfer.amount };
+                 }
+                 if (bucket.id === bucketId) {
+                     return { ...bucket, amount: bucket.amount + transfer.amount };
+                 }
+                 return bucket;
+             });
+          }
+      }
+
+      // Handle Expense
+      const expenseTransaction: Transaction = {
         id: Date.now().toString(),
         amount,
         date,
@@ -132,8 +210,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         bucketId,
         type: 'expense',
       };
+      newTransactions.push(expenseTransaction);
 
-      const updatedBuckets = prev.buckets.map((bucket) => {
+      updatedBuckets = updatedBuckets.map((bucket) => {
         if (bucket.id === bucketId) {
           return { ...bucket, amount: bucket.amount - amount };
         }
@@ -143,7 +222,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       return {
         ...prev,
         buckets: updatedBuckets,
-        transactions: [...prev.transactions, newTransaction],
+        transactions: newTransactions,
       };
     });
   };
@@ -220,6 +299,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         deleteTransaction,
         addIncome,
         logExpense,
+        transferFunds,
         setIncomeType,
         setSafetyMargin,
         completeOnboarding,
