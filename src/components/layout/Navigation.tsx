@@ -4,7 +4,7 @@ import React from 'react';
 import { useFinance } from '@/context/FinanceContext';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, LayoutGrid, Settings } from 'lucide-react';
+import { Home, LayoutGrid, Settings, History } from 'lucide-react';
 
 export function Navigation() {
   const { state } = useFinance();
@@ -17,6 +17,7 @@ export function Navigation() {
   const navItems = [
     { href: '/', label: 'Dashboard', icon: Home },
     { href: '/buckets', label: 'Buckets', icon: LayoutGrid },
+    { href: '/transactions', label: 'History', icon: History },
     { href: '/settings', label: 'Settings', icon: Settings },
   ];
 

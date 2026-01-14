@@ -11,6 +11,7 @@ interface FinanceContextType {
   deleteBucket: (id: string) => void;
   setBuckets: (buckets: Bucket[]) => void;
   addTransaction: (transaction: Transaction) => void;
+  deleteTransaction: (id: string) => void;
   addIncome: (amount: number, source: string, date: string, allocations: Record<string, number>) => void;
   logExpense: (amount: number, description: string, date: string, bucketId: string) => void;
   setIncomeType: (type: IncomeType) => void;
@@ -69,6 +70,32 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const deleteTransaction = (id: string) => {
+    setState((prev) => {
+      const transaction = prev.transactions.find((t) => t.id === id);
+      if (!transaction) return prev;
+
+      // Reverse the balance impact
+      const updatedBuckets = prev.buckets.map((bucket) => {
+        if (transaction.type === 'income' && transaction.allocations) {
+           // Subtract allocated amount
+           const allocatedAmount = transaction.allocations[bucket.id] || 0;
+           return { ...bucket, amount: bucket.amount - allocatedAmount };
+        } else if (transaction.type === 'expense' && transaction.bucketId === bucket.id) {
+           // Add back amount
+           return { ...bucket, amount: bucket.amount + transaction.amount };
+        }
+        return bucket;
+      });
+
+      return {
+        ...prev,
+        buckets: updatedBuckets,
+        transactions: prev.transactions.filter((t) => t.id !== id),
+      };
+    });
+  };
+
   const addIncome = (amount: number, source: string, date: string, allocations: Record<string, number>) => {
     setState((prev) => {
       const newTransaction: Transaction = {
@@ -76,6 +103,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         amount,
         date,
         description: source,
+        allocations,
         type: 'income',
       };
 
@@ -189,6 +217,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         deleteBucket,
         setBuckets,
         addTransaction,
+        deleteTransaction,
         addIncome,
         logExpense,
         setIncomeType,

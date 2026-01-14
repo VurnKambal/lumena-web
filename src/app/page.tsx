@@ -9,7 +9,8 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Modal } from '@/components/ui/Modal';
 import { IncomeWizard } from '@/components/income/IncomeWizard';
 import { ExpenseModal } from '@/components/expense/ExpenseModal';
-import { Plus, Minus, Wallet } from 'lucide-react';
+import { Plus, Minus, Wallet, ArrowRight, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Home() {
   const { state } = useFinance();
@@ -40,6 +41,11 @@ export default function Home() {
   const runwayGoalMonths = 6;
   const runwayProgress = Math.min(100, (runwayMonths / runwayGoalMonths) * 100);
 
+  // Recent Transactions
+  const recentTransactions = [...state.transactions]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
+
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
        {/* Hero Section */}
@@ -67,38 +73,86 @@ export default function Home() {
        <div className="max-w-md mx-auto p-6 space-y-4">
           <h2 className="text-lg font-semibold text-brand-text">Your Buckets</h2>
           <div className="grid grid-cols-1 gap-4">
-             {state.buckets.map((bucket) => {
-                 // Percentage of total cash
-                 const percentOfTotal = totalCash > 0 ? (bucket.amount / totalCash) * 100 : 0;
-                 return (
-                    <Card key={bucket.id} className="p-4 space-y-3">
-                       <div className="flex justify-between items-center">
-                          <div className="flex items-center space-x-3">
-                             <div className={`p-2 rounded-lg ${
-                                bucket.category === 'Essentials' ? 'bg-blue-50 text-blue-600' :
-                                bucket.category === 'Savings' ? 'bg-emerald-50 text-emerald-600' :
-                                bucket.category === 'Tax' ? 'bg-amber-50 text-amber-600' :
-                                'bg-indigo-50 text-indigo-600'
-                             }`}>
-                                <Wallet className="w-5 h-5" />
-                             </div>
-                             <div>
-                                <h3 className="font-semibold text-brand-text">{bucket.name}</h3>
-                                <p className="text-xs text-slate-400">{bucket.percentage}% Allocation</p>
-                             </div>
-                          </div>
-                          <p className="text-xl font-bold text-slate-700 tabular-nums">
-                             ${bucket.amount.toFixed(2)}
-                          </p>
-                       </div>
-                       <div className="space-y-1">
-                          <ProgressBar value={percentOfTotal} max={100} className="h-1.5" colorClass="bg-slate-800" />
-                          <p className="text-xs text-slate-400 text-right">{percentOfTotal.toFixed(0)}% of Total</p>
-                       </div>
-                    </Card>
-                 );
-             })}
+             {state.buckets.length === 0 ? (
+                 <Card className="p-6 text-center space-y-3 bg-slate-50 border-dashed border-2 border-slate-200">
+                    <div className="mx-auto w-12 h-12 bg-white rounded-full flex items-center justify-center text-slate-400 shadow-sm">
+                        <Wallet className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h3 className="font-medium text-slate-700">No buckets yet</h3>
+                        <p className="text-sm text-slate-500">Create your first bucket to organize money.</p>
+                    </div>
+                    <Button variant="outline" onClick={() => router.push('/buckets')}>Manage Buckets</Button>
+                 </Card>
+             ) : (
+                 state.buckets.map((bucket) => {
+                     // Percentage of total cash
+                     const percentOfTotal = totalCash > 0 ? (bucket.amount / totalCash) * 100 : 0;
+                     return (
+                        <Card key={bucket.id} className="p-4 space-y-3">
+                           <div className="flex justify-between items-center">
+                              <div className="flex items-center space-x-3">
+                                 <div className={`p-2 rounded-lg ${
+                                    bucket.category === 'Essentials' ? 'bg-blue-50 text-blue-600' :
+                                    bucket.category === 'Savings' ? 'bg-emerald-50 text-emerald-600' :
+                                    bucket.category === 'Tax' ? 'bg-amber-50 text-amber-600' :
+                                    'bg-indigo-50 text-indigo-600'
+                                 }`}>
+                                    <Wallet className="w-5 h-5" />
+                                 </div>
+                                 <div>
+                                    <h3 className="font-semibold text-brand-text">{bucket.name}</h3>
+                                    <p className="text-xs text-slate-400">{bucket.percentage}% Allocation</p>
+                                 </div>
+                              </div>
+                              <p className="text-xl font-bold text-slate-700 tabular-nums">
+                                 ${bucket.amount.toFixed(2)}
+                              </p>
+                           </div>
+                           <div className="space-y-1">
+                              <ProgressBar value={percentOfTotal} max={100} className="h-1.5" colorClass="bg-slate-800" />
+                              <p className="text-xs text-slate-400 text-right">{percentOfTotal.toFixed(0)}% of Total</p>
+                           </div>
+                        </Card>
+                     );
+                 })
+             )}
           </div>
+       </div>
+
+       {/* Recent Activity */}
+       <div className="max-w-md mx-auto px-6 space-y-4">
+           <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-brand-text">Recent Activity</h2>
+              <Link href="/transactions" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center">
+                  View All <ArrowRight className="w-4 h-4 ml-1" />
+              </Link>
+           </div>
+
+           <Card className="divide-y divide-slate-100 overflow-hidden">
+               {recentTransactions.length === 0 ? (
+                   <div className="p-6 text-center text-slate-500 text-sm">
+                       No recent activity.
+                   </div>
+               ) : (
+                   recentTransactions.map((t) => (
+                       <div key={t.id} className="p-4 flex justify-between items-center hover:bg-slate-50 transition-colors">
+                           <div className="flex items-center gap-3">
+                               <div className={`p-2 rounded-full ${t.type === 'income' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                                   {t.type === 'income' ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
+                               </div>
+                               <div>
+                                   <p className="font-medium text-slate-800 text-sm">{t.description}</p>
+                                   <p className="text-xs text-slate-400">{t.date}</p>
+                               </div>
+                           </div>
+                           <span className={`font-bold text-sm tabular-nums ${t.type === 'income' ? 'text-emerald-600' : 'text-slate-800'}`}>
+                               {t.type === 'income' ? '+' : '-'}${t.amount.toFixed(2)}
+                           </span>
+                       </div>
+                   ))
+               )}
+           </Card>
        </div>
 
        {/* Floating Action Buttons */}
