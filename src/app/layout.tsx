@@ -1,5 +1,6 @@
 import { Inter } from "next/font/google";
 import { FinanceProvider } from "@/context/FinanceContext";
+import { AppShell } from "@/components/layout/AppShell";
 import "./globals.css";
 
 const inter = Inter({
@@ -19,9 +20,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} antialiased`}>
+      <body className={`${inter.variable} antialiased bg-slate-50`}>
         <FinanceProvider>
-          {children}
+          <AppShell>
+             {children}
+          </AppShell>
         </FinanceProvider>
       </body>
     </html>
